@@ -11,4 +11,4 @@ const client = new MongoClient(uri, {
 
 const database = client.db("gc01_fase3")
 
-module.exports = database
+module.exports = { database }
