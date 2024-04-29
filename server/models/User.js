@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb")
 const {database} = require("../config/mongodb")
 
 class User {
@@ -14,6 +15,18 @@ class User {
         const users = this.collection()
         const result = await users.insertOne(newUser)
         return result
+    }
+
+    static async deleteUser(id) {
+        const users = this.collection()
+        const result = await users.deleteOne({ _id: new ObjectId(String(id)) })
+        if (result.deletedCount === 1){
+            return "Successfully deleted user"
+        } else {
+            throw new Error (
+                "No document match the query!"
+            )
+        }
     }
 }
 module.exports = User
