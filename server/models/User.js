@@ -11,7 +11,7 @@ class User {
         return users
     }
 
-    static async addBook(newUser) {
+    static async addUser(newUser) {
         const users = this.collection()
         const result = await users.insertOne(newUser)
         return result
