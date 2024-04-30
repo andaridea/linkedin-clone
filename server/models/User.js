@@ -1,5 +1,5 @@
 const { ObjectId } = require("mongodb")
-const {database} = require("../config/mongodb")
+const { database } = require("../config/mongodb")
 
 class User {
     static collection () {
