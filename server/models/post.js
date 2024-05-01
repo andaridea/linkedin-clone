@@ -11,9 +11,21 @@ class Post {
         return posts
     }
 
+    static async getPostById (_id) {
+        const posts = this.collection()
+        const result = await posts.findOne({
+            _id: new ObjectId(String(_id))
+        })
+        return result
+    }
+
     static async addPost(newPost) {
         const posts = this.collection()
-        const result = await posts.insertOne(newPost)
+        const result = await posts.insertOne({
+            ...newPost,
+            comments: [],
+            likes: []
+        })
         return result
     }
 

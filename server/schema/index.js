@@ -1,16 +1,19 @@
+require ("dotenv").config()
 const { ApolloServer }  = require ('@apollo/server');
-const { startStandaloneServer } = require ('@apollo/server/standalone');
-
-
+const { startStandaloneServer } = require ('@apollo/server/standalone')
 const {
   typeDefs: userTypeDefs,
   resolvers: userResolvers,
 } = require ("../schema/user")
+const {
+  typeDefs: postTypeDefs,
+  resolvers: postResolvers,
+} = require ("../schema/post")
 
 
 const server = new ApolloServer({
-  typeDefs: [userTypeDefs],
-  resolvers: [userResolvers]
+  typeDefs: [userTypeDefs, postTypeDefs],
+  resolvers: [userResolvers, postResolvers]
 });
 
 startStandaloneServer(server, {
