@@ -39,8 +39,20 @@ const typeDefs = `#graphql
     imgUrl: String
   }
 
+  input newComment {
+    _id: ID
+    content: String
+  }
+
+  input newLike {
+    _id: ID
+    username: String
+  }
+
   type Mutation {
     addPost(newPost: newPost): Post
+    addComment(newComment: newComment): Comment
+    likepost(newLike: newLike): Like
     deletePost(id: ID): String
   }
 `;
@@ -59,12 +71,31 @@ const resolvers = {
     },
     Mutation: {
         addPost: async (_, args) => {
-            const {content, tags, imgUrl} = args.newPost
-            const newPost = {content, tags, imgUrl}
-    
+            const {content, tags, imgUrl, authorId} = args.newPost
+            if (!content) {
+              throw new Error("Content cannot be empty!")
+            }
+            const newPost = {content, tags, imgUrl, authorId}
+            
             const data = await Post.addPost(newPost)
             const result = await Post.getPostById(data.insertedId)
             return result
+        },
+        addComment: async (_, args) => {
+          const {content, _id} = args.newComment
+          const newComment = {content, _id}
+
+          const result = await Post.newComment(newComment)
+
+          return result
+        },
+        likePost: async (_, args) => {
+          const {_id, username} = args.newLike
+          const newLike = {_id, username}
+
+          const result = await Post.likePost(newLike)
+
+          return result
         },
         deletePost: async (_, args) => {
             const { id } = args

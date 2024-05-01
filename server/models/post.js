@@ -7,7 +7,7 @@ class Post {
     }
 
     static async getAll () {
-        const posts = await this.collection().find().toArray()
+        const posts = await this.collection().find().sort({ createdAt: -1 }).toArray()
         return posts
     }
 
@@ -21,13 +21,19 @@ class Post {
 
     static async addPost(newPost) {
         const posts = this.collection()
-        const result = await posts.insertOne({
+        const data = await posts.insertOne({
             ...newPost,
+            likes: [],
             comments: [],
-            likes: []
+            createdAt: new Date(),
+            updatedAt: new Date()
+        })
+        const result = await Post.posts.findOne({
+            _id: data.insertedId
         })
         return result
     }
+
 
     static async deletePost(id) {
         const posts = this.collection()
