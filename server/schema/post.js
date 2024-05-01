@@ -1,4 +1,5 @@
 const Post = require ("../models/post")
+const User = require("../models/user")
 
 const typeDefs = `#graphql
   type Post {
@@ -31,6 +32,7 @@ const typeDefs = `#graphql
   type Query {
     getPosts: [Post]
     getPostById(_id: ID): Post
+    searchUsers(criteria: searchInput): [User]
   }
 
   input newPost {
@@ -42,6 +44,7 @@ const typeDefs = `#graphql
   input newComment {
     _id: ID
     content: String
+    username: String
   }
 
   input newLike {
@@ -49,10 +52,15 @@ const typeDefs = `#graphql
     username: String
   }
 
+  input searchInput {
+    name: String
+    username: String
+  }
+
   type Mutation {
     addPost(newPost: newPost): Post
     addComment(newComment: newComment): Comment
-    likepost(newLike: newLike): Like
+    likePost(newLike: newLike): Like
     deletePost(id: ID): String
   }
 `;
@@ -67,6 +75,17 @@ const resolvers = {
           const { _id } = args
           const posts = await Post.getPostById(_id)
           return posts
+        },
+        searchUsers: async (_, args) => {
+          const {name, username} = criteria
+
+          const users = await User.find({
+            $or: [
+              {name: {regex: name, $options: 'i'} },
+              {username: {regex: username, $options: 'i'} }
+            ]
+          })
+          return users
         }
     },
     Mutation: {
@@ -82,15 +101,27 @@ const resolvers = {
             return result
         },
         addComment: async (_, args) => {
-          const {content, _id} = args.newComment
+          const {content, _id, username} = args.newComment
+
+          if (!content) {
+            throw new Error ("Content cannot be empty")
+          }
+
+          if (!username) {
+            throw new Error ("You must login first")
+          }
           const newComment = {content, _id}
 
-          const result = await Post.newComment(newComment)
+          const result = await Post.addComment(newComment)
 
           return result
         },
         likePost: async (_, args) => {
           const {_id, username} = args.newLike
+
+          if (!username) {
+            throw new Error ("You must login first")
+          }
           const newLike = {_id, username}
 
           const result = await Post.likePost(newLike)
