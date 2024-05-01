@@ -19,6 +19,15 @@ class Post {
         return result
     }
 
+    static async searchUsers(query) {
+        const users = this.collection()
+        const regexQuery = new RegExp(query, 'i')
+        const searchResult = await users.find({
+            $or: [{name: regexQuery}, {username: regexQuery}]
+        }).toArray()
+        return searchResult
+    }
+
     static async addPost(newPost) {
         const posts = this.collection()
         const data = await posts.insertOne({
