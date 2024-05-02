@@ -7,33 +7,81 @@ class Post {
     }
 
     static async getAll() {
-        const posts = await this.collection().find().sort({ createdAt: -1 }).toArray()
+        const posts = Post.collection().aggregate([
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "authorId",
+                    foreignField: "_id",
+                    as: "author"
+                }
+            },
+            {
+                $unwind:
+                {
+                    path: "$author"
+                }
+            },
+            {
+                $project:
+                {
+                    "author.password": 0
+                }
+            },
+            {
+                $sort:
+                {
+                    createdAt: -1
+                }
+
+            }
+        ]).toArray()
         return posts
     }
 
     static async getPostById(_id) {
-        const posts = this.collection()
-        const result = await posts.findOne({
-            _id: new ObjectId(String(_id))
-        })
+        const posts = [
+            {
+                $match: { _id: new ObjectId(_id) }
+            },
+            {
+                $lookup:
+                {
+                    from: "users",
+                    localField: "authorId",
+                    foreignField: "_id",
+                    as: "author"
+                }
+            },
+            {
+                $unwind:
+                {
+                    path: "$author"
+                }
+            },
+            {
+                $project:
+                {
+                    "author.password": 0
+                }
+            },
+        ]
+
+        const result = await Post.collection().aggregate(posts).toArray()
         return result
     }
 
-    static async searchUsers(query) {
-        const users = this.collection()
-        const regexQuery = new RegExp(query, 'i')
-        const searchResult = await users.find({
-            $or: [{name: regexQuery}, {username: regexQuery}]
-        }).toArray()
-        return searchResult
-    }
-
-    static async addPost(newPost) {
+    static async addPost(newPost, payload) {
         const posts = this.collection()
+        const { content, tags, imgUrl } = newPost
         const data = await posts.insertOne({
-            ...newPost,
+            content,
+            imgUrl,
+            tags,
             likes: [],
             comments: [],
+            authorId: payload._id,
             createdAt: new Date(),
             updatedAt: new Date()
         })
@@ -43,16 +91,16 @@ class Post {
         return result
     }
 
-    static async addComment(newComment) {
+    static async addComment(newComment, payload) {
         const posts = this.collection()
-        const { _id, username, content } = newComment
+        const { _id, content } = newComment
 
         const result = await posts.updateOne(
             { _id: new ObjectId(String(_id)) },
             {
                 $push: {
                     comments: {
-                        username: username,
+                        username: payload.username,
                         content: content,
                         createdAt: new Date(),
                         updatedAt: new Date()
@@ -66,23 +114,23 @@ class Post {
         }
     }
 
-    static async likePost (newLike) {
+    static async likePost(newLike, payload) {
         const posts = this.collection()
-        const { _id, username } = newLike
+        const { _id } = newLike
 
         const result = await posts.updateOne(
             { _id: new ObjectId(String(_id)) },
             {
                 $push: {
                     likes: {
-                        username: username,
+                        username: payload.username,
                         createdAt: new Date(),
                         updatedAt: new Date()
                     }
                 }
             }
         )
-         if (result.modifiedCount === 1) {
+        if (result.modifiedCount === 1) {
             const updatedPost = await posts.findOne({ _id: new ObjectId(String(_id)) });
             return updatedPost;
         }

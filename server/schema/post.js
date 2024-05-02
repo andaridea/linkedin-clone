@@ -12,6 +12,14 @@ const typeDefs = `#graphql
     likes: [Like]
     createdAt: String
     updatedAt: String
+    author: Author
+  }
+
+  type Author {
+    _id: ID
+    username: String
+    name: String
+    email: String
   }
 
   type Comment {
@@ -31,8 +39,7 @@ const typeDefs = `#graphql
 
   type Query {
     getPosts: [Post]
-    getPostById(_id: ID): Post
-    searchUsers(criteria: searchInput): [User]
+    getPostById(_id: ID): [Post]
   }
 
   input newPost {
@@ -52,11 +59,6 @@ const typeDefs = `#graphql
     username: String
   }
 
-  input searchInput {
-    name: String
-    username: String
-  }
-
   type Mutation {
     addPost(newPost: newPost): Post
     addComment(newComment: newComment): Comment
@@ -67,41 +69,37 @@ const typeDefs = `#graphql
 
 const resolvers = {
     Query: {
-        getPosts: async () => {
+        getPosts: async (_, args, contextValue) => {
+            const payload = await contextValue.authentication()
             const posts = await Post.getAll()
             return posts
         },
-        getPostById: async (_, args) => {
+        getPostById: async (_, args, contextValue) => {
+          const payload = await contextValue.authentication()
           const { _id } = args
           const posts = await Post.getPostById(_id)
           return posts
-        },
-        searchUsers: async (_, args) => {
-          const {name, username} = criteria
-
-          const users = await User.find({
-            $or: [
-              {name: {regex: name, $options: 'i'} },
-              {username: {regex: username, $options: 'i'} }
-            ]
-          })
-          return users
         }
     },
     Mutation: {
-        addPost: async (_, args) => {
-            const {content, tags, imgUrl, authorId} = args.newPost
+        addPost: async (_, args, contextValue) => {
+            const payload = await contextValue.authentication()
+            const {content, tags, imgUrl} = args.newPost
             if (!content) {
               throw new Error("Content cannot be empty!")
             }
-            const newPost = {content, tags, imgUrl, authorId}
+            const newPost = {
+              content, 
+              tags, 
+              imgUrl,
+              }
             
-            const data = await Post.addPost(newPost)
-            const result = await Post.getPostById(data.insertedId)
-            return result
+            const data = await Post.addPost(newPost, payload)
+            return data
         },
-        addComment: async (_, args) => {
-          const {content, _id, username} = args.newComment
+        addComment: async (_, args, contextValue) => {
+          const payload = await contextValue.authentication()
+          const {content, username} = args.newComment
 
           if (!content) {
             throw new Error ("Content cannot be empty")
@@ -110,13 +108,14 @@ const resolvers = {
           if (!username) {
             throw new Error ("You must login first")
           }
-          const newComment = {content, _id}
+          const newComment = {content, username}
 
-          const result = await Post.addComment(newComment)
+          const result = await Post.addComment(newComment, payload)
 
           return result
         },
         likePost: async (_, args) => {
+          const payload = await contextValue.authentication()
           const {_id, username} = args.newLike
 
           if (!username) {
@@ -124,7 +123,7 @@ const resolvers = {
           }
           const newLike = {_id, username}
 
-          const result = await Post.likePost(newLike)
+          const result = await Post.likePost(newLike, payload)
 
           return result
         },

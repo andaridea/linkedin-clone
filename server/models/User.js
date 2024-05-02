@@ -41,6 +41,15 @@ class User {
         return result
     }
 
+    static async searchUsers(query) {
+        const users = this.collection()
+        const regexQuery = new RegExp(query, 'i')
+        const searchResult = await users.find({
+            $or: [{name: regexQuery}, {username: regexQuery}]
+        }).toArray()
+        return searchResult
+    }
+
     static async deleteUser(id) {
         const users = this.collection()
         const result = await users.deleteOne({ _id: new ObjectId(String(id)) })

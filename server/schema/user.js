@@ -18,6 +18,7 @@ const typeDefs = `#graphql
   type Query {
     getUsers: [User]
     getUserById(_id: ID): User
+    searchUsers(criteria: searchInput): [User]
   }
 
   input newUser {
@@ -30,6 +31,11 @@ const typeDefs = `#graphql
   input Login {
     email: String
     password: String
+  }
+
+  input searchInput {
+    name: String
+    username: String
   }
 
   type Mutation {
@@ -48,6 +54,18 @@ const resolvers = {
     getUserById: async (_, args) => {
       const { _id } = args
       const users = await User.getUserById(_id)
+      return users
+    },
+    searchUsers: async (_, args, contextValue) => {
+      const payload = await contextValue.authentication()
+      const {name, username} = args.criteria
+
+      const users = await User.find({
+        $or: [
+          {name: {regex: name, $options: 'i'} },
+          {username: {regex: username, $options: 'i'} }
+        ]
+      })
       return users
     }
   },

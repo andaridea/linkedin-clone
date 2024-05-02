@@ -5,12 +5,12 @@ const typeDefs = `#graphql
     _id: ID
     followingId: ID
     followerId: ID
-    createdAt: Date
-    updatedAt: Date
+    createdAt: String
+    updatedAt: String
   }
 
   type Query {
-    getFollows: [Follow]
+    getFollows: [User]
   }
 
   input newFollow {
@@ -19,7 +19,7 @@ const typeDefs = `#graphql
   }
 
   type Mutation {
-    addFollow(newFollow: newFollow): Follow
+    addFollow(newFollow: newFollow): [User]
     deleteFollow(id: ID): String
   }
 `;
@@ -32,8 +32,10 @@ const resolvers = {
         }
     },
     Mutation: {
-        addFollow: async (_, args) => {
-            const {followingId, followerId} = args.newFollow
+        addFollow: async (_, args, contectValue) => {
+            const payload = await contectValue.authentication()
+            const followerId = payload._id
+            const {followingId} = args.newFollow
             const newFollow = {followingId, followerId}
     
             const result = await Follow.addFollow(newFollow)
