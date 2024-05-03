@@ -1,6 +1,7 @@
 const { hashPassword, comparePassword } = require("../helpers/bcrypt");
 const { createToken } = require("../helpers/jwt");
 const User = require("../models/user")
+const Follow = require("../models/follow")
 
 const typeDefs = `#graphql
   type User {
@@ -51,11 +52,24 @@ const resolvers = {
       const users = await User.getAll()
       return users
     },
-    getUserById: async (_, args) => {
+
+    getUserById: async (_, args, contextValue) => {
+      const payload = await contextValue.authentication()
       const { _id } = args
-      const users = await User.getUserById(_id)
-      return users
+      const user = await User.getUserById(_id)
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const following = await Follow.getFollowingForUser(_id);
+      const followers = await Follow.getFollowersForUser(_id);
+  
+      user.following = following;
+      user.followers = followers;
+
+      return user
     },
+
     searchUsers: async (_, args, contextValue) => {
       const payload = await contextValue.authentication()
       const {name, username} = args.criteria
