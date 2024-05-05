@@ -9,7 +9,7 @@ const typeDefs = `#graphql
     name: String
     username: String
     email: String
-    password: String
+    profilePic: String
   }
 
   type Token {
@@ -27,6 +27,7 @@ const typeDefs = `#graphql
     username: String
     email: String
     password: String
+    profilePic: String
   }
 
   input Login {
@@ -85,7 +86,7 @@ const resolvers = {
   },
   Mutation: {
     register: async (_, args) => {
-      const { name, username, email, password } = args.newUser
+      const { name, username, email, password, profilePic } = args.newUser
       // validasi required
       if (!username) {
         throw new Error("Username is required")
@@ -101,6 +102,8 @@ const resolvers = {
         throw new Error("Password minimal 5 characters!");
       }
 
+      //check email format
+
       //validasi uniq
       const existingEmail = await User.findByEmail(email)
       if (existingEmail) {
@@ -115,7 +118,8 @@ const resolvers = {
         name,
         username,
         email,
-        password: hashPassword(password)
+        password: hashPassword(password),
+        profilePic
       }
       const result = await User.register(newUser)
       newUser._id = result.insertedId

@@ -7,7 +7,7 @@ class Post {
     }
 
     static async getAll() {
-        const posts = Post.collection().aggregate([
+        const posts = [
             {
                 $lookup:
                 {
@@ -36,8 +36,11 @@ class Post {
                 }
 
             }
-        ]).toArray()
-        return posts
+        ]
+        // console.log(posts, "<<<<<<<< ini pipeline aggregation")
+        const result = await Post.collection().aggregate(posts).toArray()
+        // console.log(result, "<<<<<<<< ini hasil aggregation")
+        return result
     }
 
     static async getPostById(_id) {
@@ -81,7 +84,7 @@ class Post {
             tags,
             likes: [],
             comments: [],
-            authorId: payload._id,
+            authorId: new ObjectId (payload._id),
             createdAt: new Date(),
             updatedAt: new Date()
         })

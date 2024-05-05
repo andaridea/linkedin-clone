@@ -11,97 +11,70 @@ class Follow {
     return follows
   }
 
-  static async getFollowsById(_id) {
-    const aggr = await this.collection().aggregate([
-      { $match: { followerId: _id } },
+  static async getFollowById(_id) {
+    const follow = [
+      {
+        $match: {  $or: [{ followerId: new ObjectId(_id) }, { followingId: new ObjectId(_id) }] }
+      },
+
       {
         $lookup: {
           from: "users",
           localField: "followingId",
           foreignField: "_id",
-          as: "userDetails"
+          as: "followingDetail"
         }
       },
+
       {
-        $unwind: "$userDetails"
+        $unwind: {
+            path: "$followingDetail"
+        }
       },
+
       {
         $project: {
-          "userDetails.name": 1,
-          "userDetails.username": 1,
-          "userDetails.email": 1,
-          "userDetails.password": 1,
-          "userDetails.createdAt": 1,
-          "userDetails.updatedAt": 1
+            "followingDetail.password": 0
         }
-      }
-    ]).toArray()
-
-    return aggr
-  }
-
-  static async getFollowersForUser(_id) {
-    const follows = this.collection();
-    const followers = await follows.aggregate([
-      {
-        $match: { followingId: new ObjectId(_id) },
       },
+
       {
         $lookup: {
           from: "users",
           localField: "followerId",
           foreignField: "_id",
-          as: "followers",
-        },
+          as: "followerDetail"
+        }
       },
-      {
-        $unwind: "$followers",
-      },
-      {
-        $project: {
-          _id: "$followers._id",
-          name: "$followers.name",
-          username: "$followers.username",
-          email: "$followers.email",
-        },
-      },
-    ]).toArray();
-    return followers;
-  }
 
-  static async getFollowingForUser(_id) {
-    const follows = this.collection();
-    const following = await follows.aggregate([
       {
-        $match: { followerId: new ObjectId(_id) },
+        $unwind: {
+            path: "$followerDetail"
+        }
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "followingId",
-          foreignField: "_id",
-          as: "following",
-        },
-      },
-      {
-        $unwind: "$following",
-      },
+
       {
         $project: {
-          _id: "$following._id",
-          name: "$following.name",
-          username: "$following.username",
-          email: "$following.email",
-        },
+            "followerDetail.password": 0
+        }
       },
-    ]).toArray();
-    return following;
+
+    ]
+
+    const data = await Follow.collection().aggregate(follow).toArray()
+    // console.log(data, "<<<<<<<<<< data di models") dapet data
+    
+   return data
   }
 
 
   static async addFollow(newFollow) {
     const follows = this.collection()
-    const result = await follows.insertOne(newFollow)
+    const data = await follows.insertOne(newFollow)
+
+    const result = await follows.findOne({
+      _id: data.insertedId
+    })
     return result
   }
 

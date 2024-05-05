@@ -17,8 +17,10 @@ const {
 } = require("../schema/follow")
 const server = new ApolloServer({
   typeDefs: [userTypeDefs, postTypeDefs, followTypeDefs],
-  resolvers: [userResolvers, postResolvers, followResolvers]
+  resolvers: [userResolvers, postResolvers, followResolvers],
+  introspection: true,
 });
+
 
 startStandaloneServer(server, {
   listen: { port: 3000 },

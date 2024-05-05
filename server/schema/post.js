@@ -20,6 +20,7 @@ const typeDefs = `#graphql
     username: String
     name: String
     email: String
+    profilePic: String
   }
 
   type Comment {
@@ -70,12 +71,21 @@ const typeDefs = `#graphql
 const resolvers = {
     Query: {
         getPosts: async (_, args, contextValue) => {
-            const payload = await contextValue.authentication()
+        //   if (!contextValue) {
+        //     throw new Error("Authentication required");
+        // }
+        //     const payload = await contextValue.authentication()
+            // console.log(payload, "<<<<<<<<< ini payload")
             const posts = await Post.getAll()
+            // console.log(posts, "<<<<<<<< ini posts") 
             return posts
         },
         getPostById: async (_, args, contextValue) => {
-          const payload = await contextValue.authentication()
+        //   if (!contextValue) {
+        //     throw new Error("Authentication required");
+        // }
+        //   const payload = await contextValue.authentication()
+          // console.log(payload, "<<<<<<<<< ini payload")
           const { _id } = args
           const posts = await Post.getPostById(_id)
           return posts
@@ -83,6 +93,9 @@ const resolvers = {
     },
     Mutation: {
         addPost: async (_, args, contextValue) => {
+          if (!contextValue) {
+            throw new Error("Authentication required");
+        }
             const payload = await contextValue.authentication()
             const {content, tags, imgUrl} = args.newPost
             if (!content) {
@@ -98,6 +111,9 @@ const resolvers = {
             return data
         },
         addComment: async (_, args, contextValue) => {
+          if (!contextValue) {
+            throw new Error("Authentication required");
+        }
           const payload = await contextValue.authentication()
           const {content, username} = args.newComment
 
@@ -114,7 +130,10 @@ const resolvers = {
 
           return result
         },
-        likePost: async (_, args) => {
+        likePost: async (_, args, contextValue) => {
+          if (!contextValue) {
+            throw new Error("Authentication required");
+        }
           const payload = await contextValue.authentication()
           const {_id, username} = args.newLike
 
